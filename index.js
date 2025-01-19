@@ -23,7 +23,7 @@ const client = new MongoClient(uri, {
 
 async function run() {
   try {
-    // Connect the client to the server	(optional starting in v4.7)
+    // Connect the client to the server (optional starting in v4.7)
     await client.connect();
     // Send a ping to confirm a successful connection
     await client.db('admin').command({ ping: 1 });
@@ -31,29 +31,72 @@ async function run() {
       'Pinged your deployment. You successfully connected to MongoDB!'
     );
 
-    const database = client.db('artifact-vault');
-    const artifactsColl = database.collection('artifacts');
+    const database = client.db('ProdVent');
+    const productsColl = database.collection('products');
     const usersColl = database.collection('users');
 
-    // Get data form DB
-    app.get('/items', async (req, res) => {
+    // Get 4 feature product data from DB
+    app.get('/products', async (req, res) => {
       try {
-        const artifactAll = await artifactsColl.find().toArray();
-        res.send(artifactAll);
+        const productAll = await productsColl.find().limit(4).toArray();
+        res.send(productAll);
       } catch (error) {
         console.log(error);
+        res.status(500).send('Failed to fetch products');
       }
     });
 
-    // Get item data by ID
-    app.get('/item/details/:id', async (req, res) => {
+    // Get 6 trending product data from DB
+    app.get('/trending', async (req, res) => {
+      try {
+        const productAll = await productsColl.find().toArray();
+        // Filter 6 most liked products
+        productAll.sort((a, b) => b.vote - a.vote);
+        productAll.length = 6;
+        res.send(productAll);
+      } catch (error) {
+        console.log(error);
+        res.status(500).send('Failed to fetch trending products');
+      }
+    });
+
+    // Get product data by ID
+    app.get('/product/details/:id', async (req, res) => {
       try {
         const id = req.params.id;
         const query = { _id: new ObjectId(id) };
-        const item = await artifactsColl.findOne(query);
-        res.send(item);
+        const product = await productsColl.findOne(query);
+        res.send(product);
       } catch (error) {
         console.log(error);
+        res.status(500).send('Failed to fetch product details');
+      }
+    });
+
+    // Upvote a product in DB
+    app.patch('/product/upvote/:id', async (req, res) => {
+      try {
+        const id = req.params.id;
+        const email = req.body.user;
+        const query = { _id: new ObjectId(id) };
+
+        // Check if user already liked the product
+        const product = await productsColl.findOne(query);
+        if (product.likedUsers.includes(email)) {
+          res.send('already liked');
+          return;
+        }
+
+        const options = { upsert: true };
+        const updateDoc = {
+          $inc: { vote: 1 },
+          $addToSet: { likedUsers: email },
+        };
+        const result = await productsColl.updateOne(query, updateDoc, options);
+        res.send(result);
+      } catch (error) {
+        console.log(error);
+        res.status(500).send('Failed to upvote product');
       }
     });
 
@@ -65,24 +108,25 @@ async function run() {
         // Check if user already exists
         const isUserExist = await usersColl.findOne({ email: user.email });
         if (isUserExist) return res.send('User already exists');
+
         // Save user data
         const result = await usersColl.insertOne(user);
         res.send(result);
       } catch (error) {
         console.log(error);
+        res.status(500).send('Failed to save user');
       }
     });
-
-    //////////////////////////////////////////////////
   } finally {
     // Ensures that the client will close when you finish/error
     // await client.close();
   }
 }
+
 run().catch(console.dir);
 
 app.get('/', (req, res) => {
-  res.send('Hello World!');
+  res.send('ProdVent server is running!');
 });
 
 app.listen(port, () => {
