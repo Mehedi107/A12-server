@@ -111,6 +111,33 @@ async function run() {
       }
     });
 
+    // Add report to a product in DB
+    app.patch('/product/report/:id', async (req, res) => {
+      try {
+        const id = req.params.id;
+        const email = req.body.email;
+        const query = { _id: new ObjectId(id) };
+
+        // Check if user already reported the product
+        const product = await productsColl.findOne(query);
+        if (product.reportedBy.includes(email)) {
+          res.send('already reported');
+          return;
+        }
+        const options = { upsert: true };
+
+        const updateDoc = {
+          $inc: { report: 1 },
+          $addToSet: { reportedBy: email },
+        };
+        const result = await productsColl.updateOne(query, updateDoc, options);
+        res.send(result);
+      } catch (error) {
+        console.log(error);
+        res.status(500).send('Failed to report product');
+      }
+    });
+
     // Save user data to DB
     app.post('/user', async (req, res) => {
       try {
