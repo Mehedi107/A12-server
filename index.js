@@ -60,6 +60,17 @@ async function run() {
       }
     });
 
+    // Get all product data from DB
+    app.get('/all-products', async (req, res) => {
+      try {
+        const productAll = await productsColl.find().toArray();
+        res.send(productAll);
+      } catch (error) {
+        console.log(error);
+        res.status(500).send('Failed to fetch all products');
+      }
+    });
+
     // Get product data by ID
     app.get('/product/details/:id', async (req, res) => {
       try {
