@@ -205,6 +205,21 @@ async function run() {
         res.status(500).send('Failed to save user');
       }
     });
+
+    // Get user data by email
+    app.get('/user/:email', async (req, res) => {
+      try {
+        const email = req.params.email;
+        const user = await usersColl.findOne({
+          email: email,
+        });
+        res.send(user);
+      } catch (error) {
+        console.log(error);
+        res.status(500).send('Failed to fetch user');
+      }
+    });
+    ////////////////////////////////////////////////////////////
   } finally {
     // Ensures that the client will close when you finish/error
     // await client.close();
