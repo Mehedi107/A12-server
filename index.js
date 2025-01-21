@@ -219,6 +219,76 @@ async function run() {
         res.status(500).send('Failed to fetch user');
       }
     });
+
+    // Verify user payment
+    app.patch('/user/verify/:email', async (req, res) => {
+      try {
+        const email = req.params.email;
+        const query = { email: email };
+        const options = { upsert: true };
+        const updateDoc = {
+          $set: { status: 'verified' },
+        };
+        const result = await usersColl.updateOne(query, updateDoc, options);
+        res.send(result);
+      } catch (error) {
+        console.log(error);
+        res.status(500).send('Failed to verify user');
+      }
+    });
+
+    // Add product to DB
+    app.put('/add-product', async (req, res) => {
+      try {
+        const productData = req.body;
+        const newProduct = {
+          name: productData.productName,
+          image: productData.productImage,
+          description: productData.productDescription,
+          tags: productData.tags,
+          externalLinks: productData.externalLink,
+          vote: 0,
+          likedUsers: [],
+          addedBy: productData.userEmail,
+          timestamp: new Date(),
+          report: 0,
+          reportedBy: [],
+          status: 'pending',
+        };
+        const result = await productsColl.insertOne(newProduct);
+        res.send(result);
+      } catch (error) {
+        console.log(error);
+        res.status(500).send('Failed to save product');
+      }
+    });
+
+    // Get product by email form DB
+    app.get('/my-product/:email', async (req, res) => {
+      try {
+        const email = req.params.email;
+        const emailQuery = { addedBy: email };
+        const products = await productsColl.find(emailQuery).toArray();
+        res.send(products);
+      } catch (error) {
+        console.log(error);
+        res.status(500).send('Failed to fetch my products');
+      }
+    });
+
+    // delete product by Id
+    app.delete('/delete-product/:id', async (req, res) => {
+      try {
+        const id = req.params.id;
+        console.log(id);
+        const query = { _id: new ObjectId(id) };
+        const result = await productsColl.deleteOne(query);
+        res.send(result);
+      } catch (error) {
+        console.log(error);
+        res.status(500).send('Failed to delete my products');
+      }
+    });
     ////////////////////////////////////////////////////////////
   } finally {
     // Ensures that the client will close when you finish/error
