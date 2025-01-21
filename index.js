@@ -254,6 +254,7 @@ async function run() {
           report: 0,
           reportedBy: [],
           status: 'pending',
+          type: 'regular',
         };
         const result = await productsColl.insertOne(newProduct);
         res.send(result);
@@ -289,6 +290,107 @@ async function run() {
         res.status(500).send('Failed to delete my products');
       }
     });
+
+    // Get product by id
+    app.get('/product/:id', async (req, res) => {
+      try {
+        const id = req.params.id;
+        const query = { _id: new ObjectId(id) };
+        const result = await productsColl.findOne(query);
+        res.send(result);
+      } catch (error) {
+        console.log(error);
+        res.status(500).send('Error fetching product');
+      }
+    });
+
+    // Update product by id
+    app.patch('/update-product/:id', async (req, res) => {
+      try {
+        const id = req.params.id;
+        const query = { _id: new ObjectId(id) };
+        const product = req.body;
+        const updateProduct = {
+          $set: {
+            name: product.productName,
+            image: product.productImage,
+            description: product.productDescription,
+            tags: product.tags,
+            externalLink: product.externalLink,
+            timestamp: new Date(),
+          },
+        };
+        const result = await productsColl.updateOne(query, updateProduct);
+        res.send(result);
+      } catch (error) {
+        console.log(error);
+        res.status(500).send('Error updating');
+      }
+    });
+
+    // Change status of product (Accepted)
+    app.patch('/accept-product/:id', async (req, res) => {
+      try {
+        const id = req.params.id;
+        const query = { _id: new ObjectId(id) };
+        const options = { upsert: true };
+        const updateDoc = {
+          $set: {
+            status: 'accepted',
+          },
+        };
+        const result = await productsColl.updateOne(query, updateDoc, options);
+        res.send(result);
+      } catch (error) {
+        console.log(error);
+        res.status(500).send('Error updating');
+      }
+    });
+
+    // Change status of product (Rejected)
+    app.patch('/reject-product/:id', async (req, res) => {
+      try {
+        const id = req.params.id;
+        const query = { _id: new ObjectId(id) };
+        const options = { upsert: true };
+        const updateDoc = {
+          $set: {
+            status: 'rejected',
+          },
+        };
+        const result = await productsColl.updateOne(query, updateDoc, options);
+        res.send(result);
+      } catch (error) {
+        console.log(error);
+        res.status(500).send('Error updating');
+      }
+    });
+
+    // Change product type feature
+    app.patch('/featured/:id', async (req, res) => {
+      try {
+        const id = req.params.id;
+        const query = { _id: new ObjectId(id) };
+        const options = { upsert: true };
+        const updateDoc = {
+          $set: {
+            type: 'featured',
+          },
+        };
+        const result = await productsColl.updateOne(query, updateDoc, options);
+        res.send(result);
+      } catch (error) {
+        console.log(error);
+        res.status(500).send('Error updating');
+      }
+    });
+
+    // Get reported product
+    // app.get('/product/reported', async (req, res) => {
+    //   // const query = { report: { $gt: 0 } };
+    //   const sortProduct = await productsColl.find().toArray();
+    //   res.send(sortProduct);
+    // });
     ////////////////////////////////////////////////////////////
   } finally {
     // Ensures that the client will close when you finish/error
