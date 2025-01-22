@@ -469,6 +469,17 @@ async function run() {
         res.status(500).send('Failed to update user role');
       }
     });
+
+    // Get all product review
+    app.get('/reviews', async (req, res) => {
+      try {
+        const result = await reviewsColl.find().toArray();
+        res.send(result);
+      } catch (error) {
+        console.log(error);
+        res.status(500).send('Failed to get all reviews');
+      }
+    });
     ////////////////////////////////////////////////////////////
   } finally {
     // Ensures that the client will close when you finish/error
