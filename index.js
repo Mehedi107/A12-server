@@ -126,9 +126,9 @@ async function run() {
     app.get('/product/:id/reviews', async (req, res) => {
       try {
         const id = req.params.id;
-        const query = { productId: id };
+        const query = { id: id };
         const reviews = await reviewsColl.find(query).toArray();
-        res.send(reviews[0]?.reviews);
+        res.send(reviews);
       } catch (error) {
         console.log(error);
         res.status(500).send('Failed to fetch reviews');
@@ -190,27 +190,28 @@ async function run() {
     });
 
     // Save review data to DB
-    app.patch('/product/:id/reviews', async (req, res) => {
+    app.post('/product/:id/reviews', async (req, res) => {
       try {
         const id = req.params.id;
         const review = req.body;
-        const query = { productId: id };
+        // console.log(review);
+
+        const doc = {
+          email: review.email,
+          name: review.name,
+          photo: review.photo,
+          rating: review.rating,
+          review: review.reviewDescription,
+          id: id,
+        };
 
         // Check if user already reviewed the product
-        const filterReview = await reviewsColl.findOne(query);
-        const isUserReviewed = filterReview.reviews.find(
-          r => r.email === review.email
-        );
-        if (isUserReviewed) {
+        const filterReview = await reviewsColl.findOne({ email: review.email });
+        if (filterReview.length > 0) {
           res.send('already reviewed');
           return;
         }
-
-        const options = { upsert: true };
-        const updateDoc = {
-          $push: { reviews: review },
-        };
-        const result = await reviewsColl.updateOne(query, updateDoc, options);
+        const result = await reviewsColl.insertOne(doc);
         res.send(result);
       } catch (error) {
         res.status(500).send('Failed to add review');
