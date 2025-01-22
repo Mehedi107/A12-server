@@ -2,6 +2,7 @@ import express, { json } from 'express';
 import 'dotenv/config';
 import cors from 'cors';
 import { MongoClient, ObjectId, ServerApiVersion } from 'mongodb';
+import jwt, { decode } from 'jsonwebtoken';
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -9,6 +10,24 @@ const port = process.env.PORT || 3000;
 // Middleware
 app.use(cors());
 app.use(json());
+
+const verifyToken = (req, res, next) => {
+  // console.log('form middleware', req.headers.authorization);
+  if (!req.headers.authorization) {
+    return res.status(401).send({ message: 'forbidden access' });
+  }
+
+  const token = req.headers.authorization.split(' ')[1];
+  // console.log('middleware', token);
+  jwt.verify(token, process.env.SECRET_KEY, (err, decoded) => {
+    if (err) {
+      return res.status(401).send({ message: 'forbidden access' });
+    }
+
+    req.user = decoded;
+    next();
+  });
+};
 
 const uri = `mongodb+srv://${process.env.USER_NAME}:${process.env.PASSWORD}@cluster0.blfnk.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
@@ -35,6 +54,15 @@ async function run() {
     const productsColl = database.collection('products');
     const usersColl = database.collection('users');
     const reviewsColl = database.collection('reviews');
+
+    // Create JWT token
+    app.post('/jwt', async (req, res) => {
+      const user = req.body;
+      const token = jwt.sign(user, process.env.SECRET_KEY, {
+        expiresIn: '365d',
+      });
+      res.send({ token });
+    });
 
     // Get 4 feature product data from DB
     app.get('/products', async (req, res) => {
@@ -265,11 +293,17 @@ async function run() {
     });
 
     // Get product by email form DB
-    app.get('/my-product/:email', async (req, res) => {
+    app.get('/my-product/:email', verifyToken, async (req, res) => {
       try {
+        const decodedEmail = req?.user?.email;
         const email = req.params.email;
-        const emailQuery = { addedBy: email };
-        const products = await productsColl.find(emailQuery).toArray();
+
+        // Verify email
+        if (email !== decodedEmail) {
+          return res.status(401).send({ message: 'Unauthorize access' });
+        }
+        const query = { addedBy: email };
+        const products = await productsColl.find(query).toArray();
         res.send(products);
       } catch (error) {
         console.log(error);
@@ -281,7 +315,6 @@ async function run() {
     app.delete('/delete-product/:id', async (req, res) => {
       try {
         const id = req.params.id;
-        console.log(id);
         const query = { _id: new ObjectId(id) };
         const result = await productsColl.deleteOne(query);
         res.send(result);
@@ -366,7 +399,7 @@ async function run() {
       }
     });
 
-    // Change product type feature
+    // Make product type featured
     app.patch('/featured/:id', async (req, res) => {
       try {
         const id = req.params.id;
@@ -386,11 +419,56 @@ async function run() {
     });
 
     // Get reported product
-    // app.get('/product/reported', async (req, res) => {
-    //   // const query = { report: { $gt: 0 } };
-    //   const sortProduct = await productsColl.find().toArray();
-    //   res.send(sortProduct);
-    // });
+    app.get('/reported', async (req, res) => {
+      try {
+        const decodedEmail = req?.user?.email;
+        const email = req.params.email;
+
+        // Verify email
+        if (email !== decodedEmail) {
+          return res.status(401).send({ message: 'Unauthorize access' });
+        }
+
+        const query = { report: { $gt: 0 } };
+        const sortProduct = await productsColl.find(query).toArray();
+        res.send(sortProduct);
+      } catch (error) {
+        console.log(error);
+        res.status(500).send('Failed to fetch all products');
+      }
+    });
+
+    // Get all users
+    app.get('/users', verifyToken, async (req, res) => {
+      try {
+        const userAll = await usersColl.find().toArray();
+        res.send(userAll);
+      } catch (error) {
+        console.log(error);
+        res.status(500).send('Failed to fetch all users');
+      }
+    });
+
+    // Update user role
+    app.patch('/users/:email/role', async (req, res) => {
+      try {
+        const email = req.params.email;
+        const { role } = req.body;
+        console.log(role);
+        const query = { email: email };
+        const options = { upsert: true };
+        const updateDoc = {
+          $set: {
+            role: role,
+          },
+        };
+        const result = await usersColl.updateOne(query, updateDoc, options);
+        res.send(result);
+      } catch (error) {
+        console.log(error);
+        res.status(500).send('Failed to update user role');
+      }
+    });
     ////////////////////////////////////////////////////////////
   } finally {
     // Ensures that the client will close when you finish/error
