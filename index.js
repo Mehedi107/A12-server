@@ -54,6 +54,7 @@ async function run() {
     const productsColl = database.collection('products');
     const usersColl = database.collection('users');
     const reviewsColl = database.collection('reviews');
+    const couponColl = database.collection('coupons');
 
     // Create JWT token
     app.post('/jwt', async (req, res) => {
@@ -479,6 +480,75 @@ async function run() {
         console.log(error);
         res.status(500).send('Failed to get all reviews');
       }
+    });
+
+    // Add coupons
+    app.post('/add-coupon', async (req, res) => {
+      try {
+        const couponData = req.body.formData;
+        const doc = {
+          code: couponData.code,
+          expiryDate: couponData.expiryDate,
+          description: couponData.description,
+          discount: couponData.discount,
+        };
+        const result = await couponColl.insertOne(doc);
+        res.send(result);
+      } catch (error) {
+        console.log(error);
+        res.status(500).send('Error adding coupon');
+      }
+    });
+
+    // Get all coupons
+    app.get('/coupons', async (req, res) => {
+      try {
+        const result = await couponColl.find().toArray();
+        res.send(result);
+      } catch (error) {
+        console.log(error);
+        res.status(500).send('Failed to get all coupons');
+      }
+    });
+
+    // Delete coupon
+    app.delete('/delete-coupon/:id', async (req, res) => {
+      try {
+        const id = req.params.id;
+        const query = { _id: new ObjectId(id) };
+        const result = await couponColl.deleteOne(query);
+        res.send(result);
+      } catch (error) {
+        console.log(error);
+        res.status(500).send('Failed to delete coupon');
+      }
+    });
+
+    // Get coupon by id
+    app.get('/coupon/:id', async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await couponColl.findOne(query);
+      res.send(result);
+    });
+
+    // Update Coupon data
+    app.patch('/update-coupon/:id', async (req, res) => {
+      try {
+        const id = req.params.id;
+        const coupon = req.body;
+        const query = { _id: new ObjectId(id) };
+        const updateDoc = {
+          $set: {
+            code: coupon.code,
+            expiryDate: coupon.expiryDate,
+            description: coupon.description,
+            discount: coupon.discount,
+          },
+        };
+        const result = await couponColl.updateOne(query, updateDoc);
+        res.send(result);
+      } catch (error) {}
     });
     ////////////////////////////////////////////////////////////
   } finally {
