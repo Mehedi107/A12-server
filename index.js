@@ -12,13 +12,11 @@ app.use(cors());
 app.use(json());
 
 const verifyToken = (req, res, next) => {
-  // console.log('form middleware', req.headers.authorization);
   if (!req.headers.authorization) {
     return res.status(401).send({ message: 'forbidden access' });
   }
 
   const token = req.headers.authorization.split(' ')[1];
-  // console.log('middleware', token);
   jwt.verify(token, process.env.SECRET_KEY, (err, decoded) => {
     if (err) {
       return res.status(401).send({ message: 'forbidden access' });
@@ -66,7 +64,7 @@ async function run() {
     });
 
     // Get 4 feature product data from DB
-    app.get('/products', async (req, res) => {
+    app.get('/products/feature', async (req, res) => {
       try {
         const productAll = await productsColl.find().limit(4).toArray();
         res.send(productAll);
@@ -105,16 +103,9 @@ async function run() {
     app.get('/product/details/:id', async (req, res) => {
       try {
         const id = req.params.id;
-
         // Get query for product details
         const productQuery = { _id: new ObjectId(id) };
         const product = await productsColl.findOne(productQuery);
-
-        // Get query for product reviews
-        // const reviewQuery = { productId: id };
-        // const reviews = await reviewsColl.find(reviewQuery).toArray();
-
-        // const result = { product, reviews: reviews[0]?.reviews } || [];
         res.send(product);
       } catch (error) {
         console.log(error);
@@ -294,16 +285,17 @@ async function run() {
       }
     });
 
-    // Get product by email form DB
+    // Get product by user email
     app.get('/my-product/:email', verifyToken, async (req, res) => {
       try {
         const decodedEmail = req?.user?.email;
         const email = req.params.email;
 
-        // Verify email
+        // Verify user
         if (email !== decodedEmail) {
           return res.status(401).send({ message: 'Unauthorize access' });
         }
+
         const query = { addedBy: email };
         const products = await productsColl.find(query).toArray();
         res.send(products);
