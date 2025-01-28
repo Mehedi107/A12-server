@@ -41,12 +41,12 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     // Connect the client to the server (optional starting in v4.7)
-    await client.connect();
+    // await client.connect();
     // Send a ping to confirm a successful connection
-    await client.db('admin').command({ ping: 1 });
-    console.log(
-      'Pinged your deployment. You successfully connected to MongoDB!'
-    );
+    // await client.db('admin').command({ ping: 1 });
+    // console.log(
+    //   'Pinged your deployment. You successfully connected to MongoDB!'
+    // );
 
     const database = client.db('ProdVent');
     const productsColl = database.collection('products');
@@ -69,7 +69,7 @@ async function run() {
         const productAll = await productsColl.find().limit(4).toArray();
         res.send(productAll);
       } catch (error) {
-        console.log(error);
+        // console.log(error);
         res.status(500).send('Failed to fetch products');
       }
     });
@@ -83,7 +83,7 @@ async function run() {
         productAll.length = 6;
         res.send(productAll);
       } catch (error) {
-        console.log(error);
+        // console.log(error);
         res.status(500).send('Failed to fetch trending products');
       }
     });
@@ -94,7 +94,7 @@ async function run() {
         const productAll = await productsColl.find().toArray();
         res.send(productAll);
       } catch (error) {
-        console.log(error);
+        // console.log(error);
         res.status(500).send('Failed to fetch all products');
       }
     });
@@ -108,7 +108,7 @@ async function run() {
         const product = await productsColl.findOne(productQuery);
         res.send(product);
       } catch (error) {
-        console.log(error);
+        // console.log(error);
         res.status(500).send('Failed to fetch product details');
       }
     });
@@ -121,7 +121,7 @@ async function run() {
         const reviews = await reviewsColl.find(query).toArray();
         res.send(reviews);
       } catch (error) {
-        console.log(error);
+        // console.log(error);
         res.status(500).send('Failed to fetch reviews');
       }
     });
@@ -148,7 +148,7 @@ async function run() {
         const result = await productsColl.updateOne(query, updateDoc, options);
         res.send(result);
       } catch (error) {
-        console.log(error);
+        // console.log(error);
         res.status(500).send('Failed to upvote product');
       }
     });
@@ -175,7 +175,7 @@ async function run() {
         const result = await productsColl.updateOne(query, updateDoc, options);
         res.send(result);
       } catch (error) {
-        console.log(error);
+        // console.log(error);
         res.status(500).send('Failed to report product');
       }
     });
@@ -222,7 +222,7 @@ async function run() {
         const result = await usersColl.insertOne(user);
         res.send(result);
       } catch (error) {
-        console.log(error);
+        // console.log(error);
         res.status(500).send('Failed to save user');
       }
     });
@@ -236,7 +236,7 @@ async function run() {
         });
         res.send(user);
       } catch (error) {
-        console.log(error);
+        // console.log(error);
         res.status(500).send('Failed to fetch user');
       }
     });
@@ -253,7 +253,7 @@ async function run() {
         const result = await usersColl.updateOne(query, updateDoc, options);
         res.send(result);
       } catch (error) {
-        console.log(error);
+        // console.log(error);
         res.status(500).send('Failed to verify user');
       }
     });
@@ -280,7 +280,7 @@ async function run() {
         const result = await productsColl.insertOne(newProduct);
         res.send(result);
       } catch (error) {
-        console.log(error);
+        // console.log(error);
         res.status(500).send('Failed to save product');
       }
     });
@@ -300,7 +300,7 @@ async function run() {
         const products = await productsColl.find(query).toArray();
         res.send(products);
       } catch (error) {
-        console.log(error);
+        // console.log(error);
         res.status(500).send('Failed to fetch my products');
       }
     });
@@ -313,7 +313,7 @@ async function run() {
         const result = await productsColl.deleteOne(query);
         res.send(result);
       } catch (error) {
-        console.log(error);
+        // console.log(error);
         res.status(500).send('Failed to delete my products');
       }
     });
@@ -326,7 +326,7 @@ async function run() {
         const result = await productsColl.findOne(query);
         res.send(result);
       } catch (error) {
-        console.log(error);
+        // console.log(error);
         res.status(500).send('Error fetching product');
       }
     });
@@ -350,7 +350,7 @@ async function run() {
         const result = await productsColl.updateOne(query, updateProduct);
         res.send(result);
       } catch (error) {
-        console.log(error);
+        // console.log(error);
         res.status(500).send('Error updating');
       }
     });
@@ -369,7 +369,7 @@ async function run() {
         const result = await productsColl.updateOne(query, updateDoc, options);
         res.send(result);
       } catch (error) {
-        console.log(error);
+        // console.log(error);
         res.status(500).send('Error updating');
       }
     });
@@ -388,7 +388,7 @@ async function run() {
         const result = await productsColl.updateOne(query, updateDoc, options);
         res.send(result);
       } catch (error) {
-        console.log(error);
+        // console.log(error);
         res.status(500).send('Error updating');
       }
     });
@@ -407,7 +407,7 @@ async function run() {
         const result = await productsColl.updateOne(query, updateDoc, options);
         res.send(result);
       } catch (error) {
-        console.log(error);
+        // console.log(error);
         res.status(500).send('Error updating');
       }
     });
@@ -427,7 +427,7 @@ async function run() {
         const sortProduct = await productsColl.find(query).toArray();
         res.send(sortProduct);
       } catch (error) {
-        console.log(error);
+        // console.log(error);
         res.status(500).send('Failed to fetch all products');
       }
     });
@@ -438,7 +438,7 @@ async function run() {
         const userAll = await usersColl.find().toArray();
         res.send(userAll);
       } catch (error) {
-        console.log(error);
+        // console.log(error);
         res.status(500).send('Failed to fetch all users');
       }
     });
@@ -448,7 +448,6 @@ async function run() {
       try {
         const email = req.params.email;
         const { role } = req.body;
-        console.log(role);
         const query = { email: email };
         const options = { upsert: true };
         const updateDoc = {
@@ -459,7 +458,7 @@ async function run() {
         const result = await usersColl.updateOne(query, updateDoc, options);
         res.send(result);
       } catch (error) {
-        console.log(error);
+        // console.log(error);
         res.status(500).send('Failed to update user role');
       }
     });
@@ -470,7 +469,7 @@ async function run() {
         const result = await reviewsColl.find().toArray();
         res.send(result);
       } catch (error) {
-        console.log(error);
+        // console.log(error);
         res.status(500).send('Failed to get all reviews');
       }
     });
@@ -488,7 +487,7 @@ async function run() {
         const result = await couponColl.insertOne(doc);
         res.send(result);
       } catch (error) {
-        console.log(error);
+        // console.log(error);
         res.status(500).send('Error adding coupon');
       }
     });
@@ -499,7 +498,7 @@ async function run() {
         const result = await couponColl.find().toArray();
         res.send(result);
       } catch (error) {
-        console.log(error);
+        // console.log(error);
         res.status(500).send('Failed to get all coupons');
       }
     });
@@ -512,7 +511,7 @@ async function run() {
         const result = await couponColl.deleteOne(query);
         res.send(result);
       } catch (error) {
-        console.log(error);
+        // console.log(error);
         res.status(500).send('Failed to delete coupon');
       }
     });
@@ -557,5 +556,5 @@ app.get('/', (req, res) => {
 });
 
 app.listen(port, () => {
-  console.log(`Example app listening on port ${port}`);
+  // console.log(`Example app listening on port ${port}`);
 });
