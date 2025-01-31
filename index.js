@@ -261,30 +261,48 @@ async function run() {
       }
     });
 
-    // Add product to DB
-    app.put('/add-product', async (req, res) => {
+    // Add product
+    app.post('/add-product', async (req, res) => {
       try {
-        const productData = req.body;
+        const {
+          productName,
+          productImage,
+          productDescription,
+          userEmail,
+          externalLink,
+          tags,
+        } = req.body;
+
+        // Validate required fields
+        if (
+          !productName ||
+          !productImage ||
+          !productDescription ||
+          !userEmail
+        ) {
+          return res.status(400).json({ message: 'Missing required fields' });
+        }
+
         const newProduct = {
-          name: productData.productName,
-          image: productData.productImage,
-          description: productData.productDescription,
-          tags: productData.tags,
-          externalLinks: productData.externalLink,
+          name: productName,
+          image: productImage,
+          description: productDescription,
+          tags,
+          externalLink,
           vote: 0,
           likedUsers: [],
-          addedBy: productData.userEmail,
+          addedBy: userEmail,
           timestamp: new Date(),
           report: 0,
           reportedBy: [],
           status: 'pending',
           type: 'regular',
         };
+
         const result = await productsColl.insertOne(newProduct);
         res.send(result);
       } catch (error) {
-        // console.log(error);
-        res.status(500).send('Failed to save product');
+        res.status(500).send({ message: 'Failed to save product', error });
       }
     });
 
