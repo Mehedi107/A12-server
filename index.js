@@ -77,16 +77,16 @@ async function run() {
       }
     });
 
-    // Get 6 trending product data from DB
-    app.get('/trending', async (req, res) => {
+    // Get 6 trending product
+    app.get('/trending-product', async (req, res) => {
       try {
-        const productAll = await productsColl.find().toArray();
-        // Filter 6 most liked products
-        productAll.sort((a, b) => b.vote - a.vote);
-        productAll.length = 6;
+        const productAll = await productsColl
+          .find()
+          .sort({ vote: -1 }) // Sort by most upvoted/descending order
+          .limit(6)
+          .toArray();
         res.send(productAll);
       } catch (error) {
-        // console.log(error);
         res.status(500).send('Failed to fetch trending products');
       }
     });
