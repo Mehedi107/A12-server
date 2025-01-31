@@ -129,29 +129,40 @@ async function run() {
       }
     });
 
-    // Upvote a product in DB
+    // Upvote product
     app.patch('/product/upvote/:id', async (req, res) => {
       try {
         const id = req.params.id;
         const email = req.body.user;
         const query = { _id: new ObjectId(id) };
 
-        // Check if user already liked the product
         const product = await productsColl.findOne(query);
+        const options = { upsert: true };
+
+        let updateDoc;
+
         if (product.likedUsers.includes(email)) {
-          res.send('already liked');
-          return;
+          updateDoc = {
+            $inc: { vote: -1 },
+            $pull: { likedUsers: email },
+          };
+        } else {
+          updateDoc = {
+            $inc: { vote: 1 },
+            $addToSet: { likedUsers: email },
+          };
         }
 
-        const options = { upsert: true };
-        const updateDoc = {
-          $inc: { vote: 1 },
-          $addToSet: { likedUsers: email },
-        };
         const result = await productsColl.updateOne(query, updateDoc, options);
-        res.send(result);
+        console.log(result);
+
+        if (result.modifiedCount === 0) {
+          return res.status(500).json({ message: 'Failed to update vote' });
+        }
+
+        const updatedProduct = await productsColl.findOne(query);
+        res.json({ message: 'Vote updated', product: updatedProduct });
       } catch (error) {
-        // console.log(error);
         res.status(500).send('Failed to upvote product');
       }
     });
@@ -287,8 +298,8 @@ async function run() {
           name: productName,
           image: productImage,
           description: productDescription,
-          tags,
-          externalLink,
+          tags: tags || [],
+          externalLink: externalLink || '',
           vote: 0,
           likedUsers: [],
           addedBy: userEmail,
