@@ -63,14 +63,17 @@ async function run() {
       res.send({ token });
     });
 
-    // Get 4 feature product data from DB
-    app.get('/products/feature', async (req, res) => {
+    // Get 4 feature product
+    app.get('/products/featured', async (req, res) => {
       try {
-        const productAll = await productsColl.find().limit(4).toArray();
-        res.send(productAll);
+        const filteredProduct = await productsColl
+          .find({ type: 'featured' }) // Find only featured product
+          .sort({ timestamp: -1 }) // Sort by latest/descending order
+          .limit(4) // Get only latest 4 product
+          .toArray();
+        res.send(filteredProduct);
       } catch (error) {
-        // console.log(error);
-        res.status(500).send('Failed to fetch products');
+        res.status(500).send({ message: 'Failed to fetch products', error });
       }
     });
 
