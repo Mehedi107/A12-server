@@ -120,8 +120,7 @@ async function run() {
     app.get('/product/:id/reviews', async (req, res) => {
       try {
         const id = req.params.id;
-        const query = { id: id };
-        const reviews = await reviewsColl.find(query).toArray();
+        const reviews = await reviewsColl.find({ productId: id }).toArray();
         res.send(reviews);
       } catch (error) {
         // console.log(error);
@@ -191,7 +190,6 @@ async function run() {
             $addToSet: { reportedBy: email },
           };
         }
-        // console.log(updateDoc);
 
         const result = await productsColl.updateOne(query, updateDoc, options);
 
