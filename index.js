@@ -41,12 +41,12 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     // Connect the client to the server (optional starting in v4.7)
-    // await client.connect();
+    await client.connect();
     // Send a ping to confirm a successful connection
-    // await client.db('admin').command({ ping: 1 });
-    // console.log(
-    //   'Pinged your deployment. You successfully connected to MongoDB!'
-    // );
+    await client.db('admin').command({ ping: 1 });
+    console.log(
+      'Pinged your deployment. You successfully connected to MongoDB!'
+    );
 
     const database = client.db('ProdVent');
     const productsColl = database.collection('products');
@@ -154,7 +154,6 @@ async function run() {
         }
 
         const result = await productsColl.updateOne(query, updateDoc, options);
-        console.log(result);
 
         if (result.modifiedCount === 0) {
           return res.status(500).json({ message: 'Failed to update vote' });
@@ -167,57 +166,72 @@ async function run() {
       }
     });
 
-    // Add report to a product in DB
+    // Update reported product
     app.patch('/product/report/:id', async (req, res) => {
       try {
         const id = req.params.id;
-        const email = req.body.email;
+        const email = req.body.user;
+        // console.log(email);
         const query = { _id: new ObjectId(id) };
 
-        // Check if user already reported the product
         const product = await productsColl.findOne(query);
-        if (product.reportedBy.includes(email)) {
-          res.send('already reported');
-          return;
-        }
+        // console.log(product);
         const options = { upsert: true };
 
-        const updateDoc = {
-          $inc: { report: 1 },
-          $addToSet: { reportedBy: email },
-        };
+        let updateDoc;
+
+        if (product.reportedBy.includes(email)) {
+          updateDoc = {
+            $inc: { report: -1 },
+            $pull: { reportedBy: email },
+          };
+        } else {
+          updateDoc = {
+            $inc: { report: 1 },
+            $addToSet: { reportedBy: email },
+          };
+        }
+        // console.log(updateDoc);
+
         const result = await productsColl.updateOne(query, updateDoc, options);
-        res.send(result);
+
+        if (result.modifiedCount === 0) {
+          return res.status(500).json({ message: 'Failed to update report' });
+        }
+
+        const updatedProduct = await productsColl.findOne(query);
+        res.json({ message: 'Report updated', product: updatedProduct });
       } catch (error) {
         // console.log(error);
         res.status(500).send('Failed to report product');
       }
     });
 
-    // Save review data to DB
+    // Save review
     app.post('/product/:id/reviews', async (req, res) => {
       try {
         const id = req.params.id;
         const review = req.body;
-        // console.log(review);
 
+        // Check if user already reviewed this product
+        const filterReview = await reviewsColl.findOne({ email: review.email });
+
+        if (filterReview) {
+          return res.send('already reviewed');
+        }
+
+        // Create a new review
         const doc = {
           email: review.email,
           name: review.name,
           photo: review.photo,
           rating: review.rating,
           review: review.reviewDescription,
-          id: id,
+          productId: id,
         };
 
-        // Check if user already reviewed the product
-        const filterReview = await reviewsColl.findOne({ email: review.email });
-        if (filterReview.length > 0) {
-          res.send('already reviewed');
-          return;
-        }
         const result = await reviewsColl.insertOne(doc);
-        res.send(result);
+        return res.send(result);
       } catch (error) {
         res.status(500).send('Failed to add review');
       }
