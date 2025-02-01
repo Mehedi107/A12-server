@@ -94,10 +94,11 @@ async function run() {
     // Get all product data from DB
     app.get('/all-products', async (req, res) => {
       try {
-        const productAll = await productsColl.find().toArray();
+        const productAll = await productsColl
+          .find({ status: 'accepted' })
+          .toArray();
         res.send(productAll);
       } catch (error) {
-        // console.log(error);
         res.status(500).send('Failed to fetch all products');
       }
     });
@@ -123,7 +124,6 @@ async function run() {
         const reviews = await reviewsColl.find({ productId: id }).toArray();
         res.send(reviews);
       } catch (error) {
-        // console.log(error);
         res.status(500).send('Failed to fetch reviews');
       }
     });
