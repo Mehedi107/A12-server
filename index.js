@@ -3,8 +3,10 @@ import 'dotenv/config';
 import cors from 'cors';
 import { MongoClient, ObjectId, ServerApiVersion } from 'mongodb';
 import jwt, { decode } from 'jsonwebtoken';
+import Stripe from 'stripe';
 
 const app = express();
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 const port = process.env.PORT || 3000;
 
 // Middleware
@@ -17,7 +19,7 @@ const verifyToken = (req, res, next) => {
   }
 
   const token = req.headers.authorization.split(' ')[1];
-  jwt.verify(token, process.env.SECRET_KEY, (err, decoded) => {
+  jwt.verify(token, process.env.JWT_SECRET_KEY, (err, decoded) => {
     if (err) {
       return res.status(401).send({ message: 'forbidden access' });
     }
@@ -57,7 +59,7 @@ async function run() {
     // Create JWT token
     app.post('/jwt', async (req, res) => {
       const user = req.body;
-      const token = jwt.sign(user, process.env.SECRET_KEY, {
+      const token = jwt.sign(user, process.env.JWT_SECRET_KEY, {
         expiresIn: '365d',
       });
       res.send({ token });
@@ -235,7 +237,7 @@ async function run() {
       }
     });
 
-    // Save user data to DB
+    // Save user data
     app.post('/user', async (req, res) => {
       try {
         const user = req.body;
@@ -262,7 +264,6 @@ async function run() {
         });
         res.send(user);
       } catch (error) {
-        // console.log(error);
         res.status(500).send('Failed to fetch user');
       }
     });
@@ -585,6 +586,42 @@ async function run() {
         const result = await couponColl.updateOne(query, updateDoc);
         res.send(result);
       } catch (error) {}
+    });
+
+    // Stripe payment intent
+    app.post('/create-payment-intent', async (req, res) => {
+      try {
+        const { price, email } = req.body;
+
+        const paymentIntent = await stripe.paymentIntents.create({
+          amount: price * 100,
+          currency: 'usd',
+          payment_method_types: ['card'],
+        });
+
+        res.send({
+          clientSecret: paymentIntent.client_secret,
+        });
+      } catch (error) {
+        res.status(500).send({ message: error.message });
+      }
+    });
+
+    // Verify user status
+    app.patch('/verify-user', async (req, res) => {
+      try {
+        const { email } = req.body;
+        const filteredUser = { email: email };
+        const updateUser = {
+          $set: {
+            status: 'verified',
+          },
+        };
+        const result = await usersColl.updateOne(filteredUser, updateUser);
+        res.send(result);
+      } catch (error) {
+        res.status(500).send('Error updating user status.');
+      }
     });
     ////////////////////////////////////////////////////////////
   } finally {
