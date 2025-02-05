@@ -307,6 +307,7 @@ async function run() {
           return res.status(400).json({ message: 'Missing required fields' });
         }
 
+        // create new product
         const newProduct = {
           name: productName,
           image: productImage,
@@ -326,7 +327,8 @@ async function run() {
         const result = await productsColl.insertOne(newProduct);
         res.send(result);
       } catch (error) {
-        res.status(500).send({ message: 'Failed to save product', error });
+        // console.log(error);
+        res.status(500).send({ message: 'Failed to save product' });
       }
     });
 
@@ -380,8 +382,8 @@ async function run() {
     app.patch('/update-product/:id', async (req, res) => {
       try {
         const id = req.params.id;
-        const query = { _id: new ObjectId(id) };
         const product = req.body;
+        const query = { _id: new ObjectId(id) };
         const updateProduct = {
           $set: {
             name: product.productName,
